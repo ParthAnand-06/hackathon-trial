@@ -109,21 +109,31 @@ def classify_and_save_emails(emails):
             email_data["predicted_category"] = predicted_category[0]
             classified_emails.append(email_data)
 
-
+        # Convert list to DataFrame
         all_emails_df = pd.DataFrame(classified_emails)
         all_emails_df.to_csv("classified_emails.csv", index=False)
-
         logging.info("All emails classified and saved to 'classified_emails.csv'.")
 
+        # Save to individual category files
+        target_categories = [
+            "Technical Support",
+            "Product Support",
+            "Customer Service",
+            "IT Support",
+            "Billing and Payments"
+        ]
 
-        for category in all_emails_df["predicted_category"].unique():
+        for category in target_categories:
             category_df = all_emails_df[all_emails_df["predicted_category"] == category]
-            category_df.to_csv(f"{category}_emails.csv", index=False)
-            logging.info(f"Saved {category} emails to '{category}_emails.csv'.")
+            if not category_df.empty:
+                filename = category.lower().replace(" ", "_") + "_emails.csv"
+                category_df.to_csv(filename, index=False)
+                logging.info(f"Saved {len(category_df)} emails to '{filename}'.")
 
     except Exception as e:
         logging.error(f"Error classifying and saving emails: {e}")
         raise
+
 
 
 @app.route("/scrape-emails", methods=["GET"])

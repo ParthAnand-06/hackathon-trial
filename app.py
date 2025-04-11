@@ -10,6 +10,9 @@ from sklearn.metrics import accuracy_score
 from flask import Flask, request, jsonify
 import time
 import threading
+import random
+import string
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -21,15 +24,19 @@ PASSWORD = "icfm pnrr shle jzvl"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def clean_text(text):
-    """Clean and normalize the email text."""
     text = text.lower()
-    text = re.sub(r"http\S+", "", text)  # Remove URLs
-    text = re.sub(r"[^a-zA-Z0-9\s]", "", text)  # Remove special characters
-    text = re.sub(r"\s+", " ", text).strip()  # Remove excessive spaces
+    text = re.sub(r"http\S+", "", text)
+    text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
+def generate_ticket_id(queue):
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    rand_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+    prefix = queue[:3].upper()
+    return f"{prefix}-{timestamp}-{rand_suffix}"
+
 def load_training_data():
-    """Load and clean the training dataset."""
     try:
         df = pd.read_csv("email_training_data.csv")
         df.columns = df.columns.str.strip()
@@ -43,10 +50,8 @@ def load_training_data():
         raise
 
 def train_classifier():
-    """Train the classifier using Random Forest."""
     try:
         df = load_training_data()
-
         vectorizer = TfidfVectorizer(
             ngram_range=(1, 2),
             stop_words="english",
@@ -55,10 +60,8 @@ def train_classifier():
         )
         X = vectorizer.fit_transform(df["body"])
         y = df["queue"]
-
         classifier = RandomForestClassifier(n_estimators=100, random_state=42)
         classifier.fit(X, y)
-
         logging.info("Random Forest classifier trained.")
         return vectorizer, classifier
     except Exception as e:
@@ -69,12 +72,11 @@ def train_classifier():
 vectorizer, classifier = train_classifier()
 
 def fetch_emails():
-    """Fetch the latest emails from Gmail."""
     try:
         imap = imaplib.IMAP4_SSL("imap.gmail.com")
         imap.login(EMAIL, PASSWORD)
         imap.select("inbox")
-        status, messages = imap.search(None, "UNSEEN")  # Fetch unseen emails
+        status, messages = imap.search(None, "UNSEEN")
         if status != "OK":
             logging.warning("No emails found.")
             return []
@@ -82,7 +84,7 @@ def fetch_emails():
         email_ids = messages[0].split()
         emails = []
 
-        for email_id in email_ids:  # Get all emails
+        for email_id in email_ids:
             status, msg_data = imap.fetch(email_id, "(RFC822)")
             for response_part in msg_data:
                 if isinstance(response_part, tuple):
@@ -120,7 +122,6 @@ def fetch_emails():
         return []
 
 def classify_and_save_emails(emails):
-    """Classify and save emails based on queue category."""
     try:
         categorized = {}
 
@@ -129,8 +130,11 @@ def classify_and_save_emails(emails):
             X_email = vectorizer.transform([body_cleaned])
             predicted = classifier.predict(X_email)[0]
 
+            ticket_id = generate_ticket_id(predicted)
             email_data["predicted_queue"] = predicted
-            logging.info(f"Email Subject: '{email_data.get('subject')}' predicted as: {predicted}")
+            email_data["ticket_id"] = ticket_id
+
+            logging.info(f"Email '{email_data.get('subject')}' predicted as: {predicted} | Ticket ID: {ticket_id}")
 
             if predicted not in categorized:
                 categorized[predicted] = []
@@ -152,15 +156,13 @@ def classify_and_save_emails(emails):
         raise
 
 def email_polling():
-    """Continuously poll for new emails."""
     while True:
         logging.info("Checking for new emails...")
         emails = fetch_emails()
         if emails:
             classify_and_save_emails(emails)
-        time.sleep(30)  # Poll every 30 seconds
+        time.sleep(30)
 
-# Flask endpoints
 @app.route("/scrape-emails", methods=["GET"])
 def scrape_emails():
     try:
@@ -180,8 +182,9 @@ def classify_email():
             return jsonify({"error": "Email body is required"}), 400
         clean_body = clean_text(email_body)
         X_email = vectorizer.transform([clean_body])
-        prediction = classifier.predict(X_email)
-        return jsonify({"predicted_queue": prediction[0]}), 200
+        prediction = classifier.predict(X_email)[0]
+        ticket_id = generate_ticket_id(prediction)
+        return jsonify({"predicted_queue": prediction, "ticket_id": ticket_id}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -198,6 +201,5 @@ def evaluate():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Start email polling in a background thread
     threading.Thread(target=email_polling, daemon=True).start()
     app.run(debug=True)

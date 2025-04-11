@@ -8,6 +8,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from flask import Flask, request, jsonify
+import time
+import threading
 
 app = Flask(__name__)
 
@@ -80,7 +82,7 @@ def fetch_emails():
         email_ids = messages[0].split()
         emails = []
 
-        for email_id in email_ids[-5:]:  # Get the last 5 emails
+        for email_id in email_ids:  # Get all emails
             status, msg_data = imap.fetch(email_id, "(RFC822)")
             for response_part in msg_data:
                 if isinstance(response_part, tuple):
@@ -149,6 +151,15 @@ def classify_and_save_emails(emails):
         logging.error(f"Failed to classify and save emails: {e}")
         raise
 
+def email_polling():
+    """Continuously poll for new emails."""
+    while True:
+        logging.info("Checking for new emails...")
+        emails = fetch_emails()
+        if emails:
+            classify_and_save_emails(emails)
+        time.sleep(30)  # Poll every 30 seconds
+
 # Flask endpoints
 @app.route("/scrape-emails", methods=["GET"])
 def scrape_emails():
@@ -187,4 +198,6 @@ def evaluate():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    # Start email polling in a background thread
+    threading.Thread(target=email_polling, daemon=True).start()
     app.run(debug=True)

@@ -74,7 +74,7 @@ def fetch_emails():
         imap = imaplib.IMAP4_SSL("imap.gmail.com")
         imap.login(EMAIL, PASSWORD)
         imap.select("inbox")
-        status, messages = imap.search(None, "ALL")
+        status, messages = imap.search(None, "UNSEEN")  # Fetch unseen emails
         if status != "OK":
             logging.warning("No emails found.")
             return []

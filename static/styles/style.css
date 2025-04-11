@@ -1,0 +1,141 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+  }
+  
+  .login-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(45deg, #6a11cb, #2575fc);
+  }
+  
+  .login-container {
+    text-align: center;
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 300px;
+  }
+  
+  h1.logo {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #2575fc;
+  }
+  
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background-color: #2575fc;
+    color: white;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #6a11cb;
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 14px;
+  }
+  
+  .dashboard-body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f9f9f9;
+  }
+  
+  .navbar {
+    background-color: #2575fc;
+    padding: 10px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar h2 {
+    margin: 0;
+  }
+  
+  .nav-links select,
+  .nav-links a {
+    color: white;
+    font-size: 16px;
+    margin-left: 10px;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+  }
+  
+  .nav-links select {
+    padding: 8px;
+  }
+  
+  .nav-links a:hover {
+    text-decoration: underline;
+  }
+  
+  .main-content {
+    display: flex;
+    height: calc(100vh - 60px);
+  }
+  
+  .sidebar {
+    width: 200px;
+    background-color: #2575fc;
+    padding: 20px;
+    color: white;
+    height: 100%;
+  }
+  
+  .sidebar ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  
+  .sidebar ul li {
+    margin: 10px 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .sidebar ul li:hover {
+    background-color: #6a11cb;
+  }
+  
+  .content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  .content h3 {
+    font-size: 24px;
+    color: #333;
+  }
+  
